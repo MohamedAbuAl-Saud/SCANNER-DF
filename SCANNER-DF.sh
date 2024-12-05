@@ -2,32 +2,6 @@
 #MYCODE-@A_Y_TR
 #آلقيـــــــــــــــآدهہ‌‏ آلزعيـــم
 
-# Install required libraries
-function install_dependencies() {
-    echo -e "\e[33m[*] Installing required libraries...\e[0m"
-    if [[ "$(uname -s)" == "Linux" ]]; then
-        if command -v apt >/dev/null; then
-            sudo apt update && sudo apt install -y curl nmap
-        elif command -v yum >/dev/null; then
-            sudo yum install -y curl nmap
-        else
-            echo -e "\e[31m[!] Package manager not supported!\e[0m"
-            exit 1
-        fi
-    elif [[ "$(uname -s)" == "Darwin" ]]; then
-        if command -v brew >/dev/null; then
-            brew install curl nmap
-        else
-            echo -e "\e[31m[!] You need to install Homebrew to install dependencies.\e[0m"
-            exit 1
-        fi
-    else
-        echo -e "\e[31m[!] Unsupported OS for installing libraries.\e[0m"
-        exit 1
-    fi
-    echo -e "\e[32m[+] Libraries installed successfully.\e[0m"
-}
-
 # Print banner
 function print_banner() {
     echo -e "\e[36m
@@ -46,7 +20,7 @@ function print_separator() {
 
 # Function to print table headers
 function print_table_headers() {
-    printf "\e[33m%-40s %-15s\e[0m\n" "Test Name" "Result"
+    printf "\e[33m%-40s %-15s\e[0m\n" "File Path" "Status"
     print_separator
 }
 
@@ -56,8 +30,8 @@ function print_menu() {
     Choose an option:
     1. Vulnerability Scan (All)
     2. Nmap Port Scan
-    3. File Permission Check
-    4. Fetch Website IP and Server Info
+    3. Website File Check
+    4. Website Analysis
     0. Exit
     \e[0m"
 }
@@ -73,17 +47,6 @@ function vulnerability_scan() {
         ["Cross-Site Scripting (XSS)"]="q=<script>alert('XSS')</script>"
         ["Cross-Site Request Forgery (CSRF)"]="q=csrf_test"
         ["Remote Code Execution (RCE)"]="q=;ls"
-        ["Buffer Overflow"]="q=AAAAAAAAAAAAAAAAAAAAAAAAAA"
-        ["Directory Traversal"]="q=../../../../etc/passwd"
-        ["Privilege Escalation"]="q=sudo_test"
-        ["Man-in-the-Middle (MITM)"]="q=mitm_test"
-        ["Broken Authentication"]="q=login_test"
-        ["Sensitive Data Exposure"]="q=sensitive_data_test"
-        ["XML External Entity (XXE) Injection"]="q=<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>"
-        ["Insecure Deserialization"]="q=deserialize_test"
-        ["Denial of Service (DoS)"]="q=dos_test"
-        ["Server-Side Request Forgery (SSRF)"]="q=http://localhost"
-        ["Clickjacking"]="q=clickjack_test"
     )
 
     print_table_headers
@@ -117,37 +80,59 @@ function port_scan() {
     print_separator
 }
 
-# File Permission Check
-function file_permission_check() {
-    echo -e "\e[34m[+] Checking File Permissions...\e[0m"
+# Website File Check
+function website_file_check() {
+    local url="$1"
+    echo -e "\e[34m[+] Checking Website Files for: $url\e[0m"
     print_separator
-    echo -e "\e[33mWarning: Files with 777 permissions:\e[0m"
-    printf "\e[33m%-50s\e[0m\n" "File"
-    print_separator
-    find / -type f -perm 0777 2>/dev/null | while read -r file; do
-        printf "\e[32m%-50s\e[0m\n" "$file"
+
+    # قائمة الملفات المدمجة داخل الكود
+    declare -a files=(
+        "index.html" "robots.txt" "sitemap.xml" "admin.php" "config.php"
+        "wp-login.php" "wp-config.php" "login.php" "db.php" "backup.zip"
+        ".env" "README.md" "LICENSE.txt" "install.php" "error_log"
+        "web.config" ".htaccess" ".git/config" "phpinfo.php" "debug.log"
+    )
+
+    print_table_headers
+
+    # تحقق من وجود كل ملف
+    for file in "${files[@]}"; do
+        response=$(curl -s -o /dev/null -w "%{http_code}" "$url/$file")
+        if [[ "$response" -eq 200 ]]; then
+            printf "\e[32m%-40s %-15s\e[0m\n" "$file" "Found"
+        else
+            printf "\e[31m%-40s %-15s\e[0m\n" "$file" "Not Found"
+        fi
     done
+
     print_separator
 }
 
-# Fetch IP and Server Info
-function fetch_ip_server() {
+# Website Analysis
+function website_analysis() {
     local url="$1"
-    echo -e "\e[34m[+] Fetching IP and Server Information for: $url\e[0m"
+    echo -e "\e[34m[+] Analyzing Website: $url\e[0m"
     print_separator
-    ip=$(ping -c 1 "$url" | grep -oP '(?<=).*?(?=)' | head -n 1)
-    server=$(curl -sI "$url" | grep -i "Server" | awk '{print $2}')
-    printf "\e[33m%-20s %-30s\e[0m\n" "Info" "Details"
+    # Get response time
+    response_time=$(curl -o /dev/null -s -w "%{time_total}" "$url")
+    # Get number of links
+    links=$(curl -s "$url" | grep -o "<a " | wc -l)
+    internal_links=$(curl -s "$url" | grep -o "<a href=\"/$url" | wc -l)
+    external_links=$((links - internal_links))
+
+    printf "\e[33m%-25s %-20s\e[0m\n" "Metric" "Value"
     print_separator
-    printf "\e[32m%-20s %-30s\e[0m\n" "IP Address:" "$ip"
-    printf "\e[32m%-20s %-30s\e[0m\n" "Server Type:" "${server:-Unknown}"
+    printf "\e[32m%-25s %-20s\e[0m\n" "Response Time (s):" "$response_time"
+    printf "\e[32m%-25s %-20s\e[0m\n" "Total Links:" "$links"
+    printf "\e[32m%-25s %-20s\e[0m\n" "Internal Links:" "$internal_links"
+    printf "\e[32m%-25s %-20s\e[0m\n" "External Links:" "$external_links"
     print_separator
 }
 
 # Main logic
 function main() {
     print_banner
-    install_dependencies
     while true; do
         print_menu
         read -p "Enter your choice: " choice
@@ -161,11 +146,12 @@ function main() {
                 port_scan "$ip"
                 ;;
             3)
-                file_permission_check
+                read -p "Enter Website URL (e.g., http://example.com): " url
+                website_file_check "$url"
                 ;;
             4)
-                read -p "Enter Domain (e.g., example.com): " domain
-                fetch_ip_server "$domain"
+                read -p "Enter Website URL (e.g., http://example.com): " url
+                website_analysis "$url"
                 ;;
             0)
                 echo -e "\e[32mExiting. Goodbye!\e[0m"
