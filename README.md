@@ -33,4 +33,5 @@ To install dependencies, run the following command (supports both Ubuntu/Debian 
 ```bash
 git clone https://github.com/MohamedAbuAl-Saud/SCANNER-DF
 cd SCANNER-DF
+chmod +x SCANNER-DF.sh
 bash SCANNER-DF.sh
