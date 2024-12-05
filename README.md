@@ -31,4 +31,6 @@ A comprehensive tool to scan websites for various security vulnerabilities, incl
 To install dependencies, run the following command (supports both Ubuntu/Debian and macOS):
 
 ```bash
-
+git clone https://github.com/MohamedAbuAl-Saud/SCANNER-DF
+cd SCANNER-DF.sh
+bash SCANNER-DF.sh
