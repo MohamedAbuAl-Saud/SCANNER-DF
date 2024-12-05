@@ -1,6 +1,7 @@
 #!/bin/bash
 #MYCODE-@A_Y_TR
 #آلقيـــــــــــــــآدهہ‌‏ آلزعيـــم
+
 # Install required libraries
 function install_dependencies() {
     echo -e "\e[33m[*] Installing required libraries...\e[0m"
@@ -27,211 +28,154 @@ function install_dependencies() {
     echo -e "\e[32m[+] Libraries installed successfully.\e[0m"
 }
 
-# Check environment
-function check_environment() {
-    os_name=$(uname -s)
-    if [[ "$os_name" == "Linux" || "$os_name" == "Darwin" || "$os_name" == "CYGWIN" ]]; then
-        echo -e "\e[32m[*] Supported environment!\e[0m"
-    else
-        echo -e "\e[33m[!] Environment may not be fully supported.\e[0m"
-    fi
-}
-
 # Print banner
 function print_banner() {
     echo -e "\e[36m
     ##############################################
-    #               SCANNER-DF                  #
+    #               SCANNER DF                  #
     ##############################################
     #           Designed by @A_Y_TR             #
     ##############################################
     \e[0m"
 }
 
-# Print menu
+# Function to print a separator line
+function print_separator() {
+    echo -e "\e[36m----------------------------------------\e[0m"
+}
+
+# Function to print table headers
+function print_table_headers() {
+    printf "\e[33m%-40s %-15s\e[0m\n" "Test Name" "Result"
+    print_separator
+}
+
+# Main menu
 function print_menu() {
     echo -e "\e[33m
-    Choose the scan option:
-    1. Full scan (Vulnerabilities + Ports)
-    2. Vulnerabilities scan only
-    3. Ports scan only
-    4. DDoS scan
-    5. SSL/TLS scan
-    6. DNS Security scan
-    7. HTTP Security Headers scan
-    9. Rate Limiting scan
+    Choose an option:
+    1. Vulnerability Scan (All)
+    2. Nmap Port Scan
+    3. File Permission Check
+    4. Fetch Website IP and Server Info
     0. Exit
     \e[0m"
 }
 
-# Vulnerability scan
-function check_vulnerabilities() {
+# Vulnerability Scan (All)
+function vulnerability_scan() {
     local url="$1"
-    echo -e "\e[34m[+] Scanning vulnerabilities for: $url...\e[0m"
+    echo -e "\e[34m[+] Starting Vulnerability Scan for: $url\e[0m"
+    print_separator
 
-    declare -A vulnerabilities=(
-        ["SQL Injection"]="sql"
-        ["XSS"]="<script>alert('XSS')</script>"
-        ["Open Redirect"]="http://example.com"
-        ["LFI"]="../../../../etc/passwd"
-        ["SSRF"]="http://localhost"
-        ["Command Injection"]="; ls"
-        ["Path Disclosure"]="/etc/passwd"
-        ["XXE"]='<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE foo [<!ELEMENT foo ANY ><!ENTITY xxe SYSTEM "file:///etc/passwd">]><foo>&xxe;</foo>'
+    declare -A tests=(
+        ["SQL Injection"]="q=' OR '1'='1"
+        ["Cross-Site Scripting (XSS)"]="q=<script>alert('XSS')</script>"
+        ["Cross-Site Request Forgery (CSRF)"]="q=csrf_test"
+        ["Remote Code Execution (RCE)"]="q=;ls"
+        ["Buffer Overflow"]="q=AAAAAAAAAAAAAAAAAAAAAAAAAA"
+        ["Directory Traversal"]="q=../../../../etc/passwd"
+        ["Privilege Escalation"]="q=sudo_test"
+        ["Man-in-the-Middle (MITM)"]="q=mitm_test"
+        ["Broken Authentication"]="q=login_test"
+        ["Sensitive Data Exposure"]="q=sensitive_data_test"
+        ["XML External Entity (XXE) Injection"]="q=<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>"
+        ["Insecure Deserialization"]="q=deserialize_test"
+        ["Denial of Service (DoS)"]="q=dos_test"
+        ["Server-Side Request Forgery (SSRF)"]="q=http://localhost"
+        ["Clickjacking"]="q=clickjack_test"
     )
 
-    for vuln in "${!vulnerabilities[@]}"; do
-        echo -n "[*] Checking for $vuln... "
-        response=$(curl -s -G --data-urlencode "q=${vulnerabilities[$vuln]}" "$url")
-        if [[ "$response" =~ .*"${vulnerabilities[$vuln]}".* ]]; then
-            echo -e "\e[32mFound!\e[0m"
+    print_table_headers
+    for vuln in "${!tests[@]}"; do
+        echo -n "[*] Testing $vuln... "
+        response=$(curl -s -G --data-urlencode "${tests[$vuln]}" "$url")
+        if [[ "$response" =~ .*"${tests[$vuln]}".* ]]; then
+            printf "\e[32m%-40s %-15s\e[0m\n" "$vuln" "Found"
         else
-            echo -e "\e[31mNot found.\e[0m"
+            printf "\e[31m%-40s %-15s\e[0m\n" "$vuln" "Not Found"
         fi
     done
+    print_separator
 }
 
-# Port scan
-function check_ports() {
-    local url="$1"
-    domain=$(echo "$url" | sed -e 's|https\?://||' -e 's|/.*||')
-    echo -e "\e[34m[+] Scanning ports for: $domain...\e[0m"
-    open_ports=$(nmap -p- --open "$domain" | grep "open" | awk '{print $1}')
+# Nmap Port Scan
+function port_scan() {
+    local ip="$1"
+    echo -e "\e[34m[+] Scanning Ports for: $ip\e[0m"
+    print_separator
+    open_ports=$(nmap -p- --open "$ip" | grep "open" | awk '{print $1 " " $2}')
+    printf "\e[33m%-15s %-20s\e[0m\n" "Port" "Service"
+    print_separator
     if [[ -z "$open_ports" ]]; then
         echo -e "\e[31mNo open ports found.\e[0m"
     else
-        echo -e "\e[32mOpen ports:\e[0m"
-        echo "$open_ports"
+        echo "$open_ports" | while read -r line; do
+            printf "\e[32m%-15s %-20s\e[0m\n" "$line"
+        done
     fi
+    print_separator
 }
 
-# SSL/TLS scan
-function check_ssl() {
+# File Permission Check
+function file_permission_check() {
+    echo -e "\e[34m[+] Checking File Permissions...\e[0m"
+    print_separator
+    echo -e "\e[33mWarning: Files with 777 permissions:\e[0m"
+    printf "\e[33m%-50s\e[0m\n" "File"
+    print_separator
+    find / -type f -perm 0777 2>/dev/null | while read -r file; do
+        printf "\e[32m%-50s\e[0m\n" "$file"
+    done
+    print_separator
+}
+
+# Fetch IP and Server Info
+function fetch_ip_server() {
     local url="$1"
-    echo -e "\e[34m[+] Checking SSL/TLS for: $url...\e[0m"
-    ssl_info=$(echo | openssl s_client -connect "$url:443" 2>/dev/null | openssl x509 -noout -dates)
-    if [[ -z "$ssl_info" ]]; then
-        echo -e "\e[31mNo valid SSL/TLS certificate found!\e[0m"
-    else
-        echo -e "\e[32mValid SSL/TLS certificate found!\e[0m"
-        echo "$ssl_info"
-    fi
+    echo -e "\e[34m[+] Fetching IP and Server Information for: $url\e[0m"
+    print_separator
+    ip=$(ping -c 1 "$url" | grep -oP '(?<=).*?(?=)' | head -n 1)
+    server=$(curl -sI "$url" | grep -i "Server" | awk '{print $2}')
+    printf "\e[33m%-20s %-30s\e[0m\n" "Info" "Details"
+    print_separator
+    printf "\e[32m%-20s %-30s\e[0m\n" "IP Address:" "$ip"
+    printf "\e[32m%-20s %-30s\e[0m\n" "Server Type:" "${server:-Unknown}"
+    print_separator
 }
 
-# DNS Security scan
-function check_dns() {
-    local domain="$1"
-    echo -e "\e[34m[+] Checking DNS records for: $domain...\e[0m"
-    dns_info=$(dig +short "$domain")
-    if [[ -z "$dns_info" ]]; then
-        echo -e "\e[31mNo DNS records found for $domain!\e[0m"
-    else
-        echo -e "\e[32mDNS records for $domain:\e[0m"
-        echo "$dns_info"
-    fi
-}
-
-# HTTP Security Headers scan
-function check_http_headers() {
-    local url="$1"
-    echo -e "\e[34m[+] Checking HTTP headers for: $url...\e[0m"
-    headers=$(curl -s -I "$url" | grep -i "Strict-Transport-Security\|X-Content-Type-Options\|X-XSS-Protection")
-    if [[ -z "$headers" ]]; then
-        echo -e "\e[31mMissing important HTTP security headers!\e[0m"
-    else
-        echo -e "\e[32mFound security headers:\e[0m"
-        echo "$headers"
-    fi
-}
-
-# Rate Limiting scan
-function check_rate_limiting() {
-    local url="$1"
-    echo -e "\e[34m[+] Testing rate limiting on: $url...\e[0m"
-    response=$(curl -s -w "%{http_code}" -o /dev/null "$url")
-    if [[ "$response" == "429" ]]; then
-        echo -e "\e[32mRate limiting is in place (HTTP 429).\e[0m"
-    else
-        echo -e "\e[31mNo rate limiting detected.\e[0m"
-    fi
-}
-
-# DDoS scan
-function check_ddos() {
-    local url="$1"
-    echo -e "\e[34m[+] Checking potential DDoS vulnerability for: $url...\e[0m"
-    # This check depends on sending numerous rapid requests to the site
-    response=$(curl -s -w "%{http_code}" -o /dev/null "$url")
-    if [[ "$response" == "503" || "$response" == "429" ]]; then
-        echo -e "\e[32mPotential DDoS vulnerability detected (HTTP 503/429).\e[0m"
-    else
-        echo -e "\e[31mNo DDoS vulnerability detected.\e[0m"
-    fi
-}
-
-# Main function
+# Main logic
 function main() {
-    check_environment
     print_banner
-
+    install_dependencies
     while true; do
         print_menu
-        read -rp $'\e[32m[?] Choose the desired option: \e[0m' choice
-
+        read -p "Enter your choice: " choice
         case $choice in
             1)
-                read -rp $'\e[32m[?] Enter the website URL: \e[0m' url
-                check_vulnerabilities "$url"
-                check_ports "$url"
-                check_ssl "$url"
-                check_dns "$url"
-                check_http_headers "$url"
-                check_rate_limiting "$url"
-                check_ddos "$url"
+                read -p "Enter URL (e.g., http://example.com): " url
+                vulnerability_scan "$url"
                 ;;
             2)
-                read -rp $'\e[32m[?] Enter the website URL: \e[0m' url
-                check_vulnerabilities "$url"
+                read -p "Enter IP Address: " ip
+                port_scan "$ip"
                 ;;
             3)
-                read -rp $'\e[32m[?] Enter the website URL: \e[0m' url
-                check_ports "$url"
+                file_permission_check
                 ;;
             4)
-                read -rp $'\e[32m[?] Enter the website URL: \e[0m' url
-                check_ddos "$url"
-                ;;
-            5)
-                read -rp $'\e[32m[?] Enter the website URL: \e[0m' url
-                check_ssl "$url"
-                ;;
-            6)
-                read -rp $'\e[32m[?] Enter the website URL: \e[0m' url
-                check_dns "$url"
-                ;;
-            7)
-                read -rp $'\e[32m[?] Enter the website URL: \e[0m' url
-                check_http_headers "$url"
-                ;;
-            9)
-                read -rp $'\e[32m[?] Enter the website URL: \e[0m' url
-                check_rate_limiting "$url"
+                read -p "Enter Domain (e.g., example.com): " domain
+                fetch_ip_server "$domain"
                 ;;
             0)
-                echo -e "\e[32m[+] Exiting...\e[0m"
+                echo -e "\e[32mExiting. Goodbye!\e[0m"
                 exit 0
                 ;;
             *)
-                echo -e "\e[31m[!] Invalid option. Please try again.\e[0m"
+                echo -e "\e[31mInvalid choice, please try again.\e[0m"
                 ;;
         esac
     done
 }
 
-# Install dependencies if necessary
-if ! command -v curl >/dev/null || ! command -v nmap >/dev/null; then
-    install_dependencies
-fi
-
-# Run the main function
 main
