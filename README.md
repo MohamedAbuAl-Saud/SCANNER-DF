@@ -31,4 +31,4 @@ A comprehensive tool to scan websites for various security vulnerabilities, incl
 To install dependencies, run the following command (supports both Ubuntu/Debian and macOS):
 
 ```bash
-./install_dependencies.sh
+
