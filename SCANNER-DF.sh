@@ -20,7 +20,7 @@ function print_separator() {
 
 # Function to print table headers
 function print_table_headers() {
-    printf "\e[33m%-40s %-15s\e[0m\n" "File Path" "Status"
+    printf "\e[33m%-40s %-15s\e[0m\n" "Vulnerability" "Status"
     print_separator
 }
 
@@ -47,6 +47,17 @@ function vulnerability_scan() {
         ["Cross-Site Scripting (XSS)"]="q=<script>alert('XSS')</script>"
         ["Cross-Site Request Forgery (CSRF)"]="q=csrf_test"
         ["Remote Code Execution (RCE)"]="q=;ls"
+        ["Buffer Overflow"]="q=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        ["Directory Traversal"]="q=../../../../etc/passwd"
+        ["Privilege Escalation"]="q=whoami"
+        ["Man-in-the-Middle (MITM) Attack"]="q=mitm"
+        ["Broken Authentication"]="q=broken_auth"
+        ["Sensitive Data Exposure"]="q=password123"
+        ["XML External Entity (XXE) Injection"]="q='<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><!DOCTYPE foo [<!ELEMENT foo ANY ><!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>'"
+        ["Insecure Deserialization"]="q=O:11:\"TestClass\":1:{s:4:\"name\";s:4:\"test\";}"
+        ["Denial of Service (DoS)"]="q=load-test"
+        ["Server-Side Request Forgery (SSRF)"]="q=http://localhost"
+        ["Clickjacking"]="q=<iframe src=\"http://example.com\"></iframe>"
     )
 
     print_table_headers
