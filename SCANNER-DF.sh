@@ -2,7 +2,7 @@
 #MYCODE-@A_Y_TR
 #آلقيـــــــــــــــآدهہ‌‏ آلزعيـــم
 
-# Print banner
+
 function print_banner() {
     echo -e "\e[36m
     ##############################################
@@ -13,18 +13,18 @@ function print_banner() {
     \e[0m"
 }
 
-# Function to print a separator line
+
 function print_separator() {
     echo -e "\e[36m----------------------------------------\e[0m"
 }
 
-# Function to print table headers
+
 function print_table_headers() {
     printf "\e[33m%-40s %-15s\e[0m\n" "Vulnerability" "Status"
     print_separator
 }
 
-# Main menu
+
 function print_menu() {
     echo -e "\e[33m
     Choose an option:
@@ -36,7 +36,7 @@ function print_menu() {
     \e[0m"
 }
 
-# Vulnerability Scan (All)
+
 function vulnerability_scan() {
     local url="$1"
     echo -e "\e[34m[+] Starting Vulnerability Scan for: $url\e[0m"
@@ -73,7 +73,7 @@ function vulnerability_scan() {
     print_separator
 }
 
-# Nmap Port Scan
+
 function port_scan() {
     local ip="$1"
     echo -e "\e[34m[+] Scanning Ports for: $ip\e[0m"
@@ -91,13 +91,13 @@ function port_scan() {
     print_separator
 }
 
-# Website File Check
+
 function website_file_check() {
     local url="$1"
     echo -e "\e[34m[+] Checking Website Files for: $url\e[0m"
     print_separator
 
-    # قائمة الملفات المدمجة داخل الكود
+    
     declare -a files=(
         "index.html" "robots.txt" "sitemap.xml" "admin.php" "config.php"
         "wp-login.php" "wp-config.php" "login.php" "db.php" "backup.zip"
@@ -107,7 +107,7 @@ function website_file_check() {
 
     print_table_headers
 
-    # تحقق من وجود كل ملف
+    
     for file in "${files[@]}"; do
         response=$(curl -s -o /dev/null -w "%{http_code}" "$url/$file")
         if [[ "$response" -eq 200 ]]; then
@@ -120,14 +120,14 @@ function website_file_check() {
     print_separator
 }
 
-# Website Analysis
+
 function website_analysis() {
     local url="$1"
     echo -e "\e[34m[+] Analyzing Website: $url\e[0m"
     print_separator
-    # Get response time
+    
     response_time=$(curl -o /dev/null -s -w "%{time_total}" "$url")
-    # Get number of links
+    
     links=$(curl -s "$url" | grep -o "<a " | wc -l)
     internal_links=$(curl -s "$url" | grep -o "<a href=\"/$url" | wc -l)
     external_links=$((links - internal_links))
@@ -141,7 +141,7 @@ function website_analysis() {
     print_separator
 }
 
-# Main logic
+
 function main() {
     print_banner
     while true; do
